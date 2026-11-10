@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YMcraft</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><meta name="theme-color" content="#EF323D">
+<style>html,body{margin:0;height:100%;background:#EF323D;color:#fff;font:15px sans-serif;display:flex;align-items:center;justify-content:center;flex-direction:column}
+h1{font:bold 34px sans-serif;letter-spacing:2px;margin:0 0 22px}
+.c{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:0 16px}
+.c button{width:min(80vw,260px);padding:18px 12px;border:3px solid #fff;background:rgba(255,255,255,.12);color:#fff;font:bold 18px sans-serif;cursor:pointer;border-radius:4px}
+.c button:hover,.c button:focus{background:#fff;color:#EF323D;outline:none}
+.c small{display:block;font:12px sans-serif;margin-top:6px;opacity:.9}
+.c button.last{box-shadow:0 0 0 3px #ffe3e3}
+#b{width:min(70vw,420px);height:14px;border:2px solid #fff;padding:2px;box-sizing:border-box;margin-top:16px;display:none}#f{height:100%;width:0;background:#fff}#t{margin-top:16px;min-height:20px}</style></head>
+<body><h1 id="h">YMCRAFT</h1>
+<div class="c" id="sel"><button data-k="263">YMcraft 26.3<small>通常版(最新)</small></button><button data-k="262">YMcraft 26.2 Modded<small>MOD 付き(Litematica・ズームなど)</small></button></div>
+<div id="t"></div><div id="b"><div id="f"></div></div>
+<script>
+(function(){
+var V={"263":{man:[["eag-inline-decoder", [["ym.decoder.0.bin", 208439]]], ["eag-inline-wasm-br", [["ym.wasm-br.0.bin", 16382307]]], ["eag-inline-mesh-wasm-br", [["ym.mesh-wasm-br.0.bin", 2842492]]], ["eag-inline-server-wasm-br", [["ym.server-wasm-br.0.bin", 8829775]]], ["eag-inline-assets", [["ym.assets.0.bin", 11053160]]], ["eag-inline-sounds", [["ym.sounds.0.bin", 20000000], ["ym.sounds.1.bin", 5921893]]]],tot:65641440,skel:"ym.skel"},"262":{man:[["eag-inline-decoder", [["ym.decoder.0.bin", 208439]]], ["eag-inline-wasm-br", [["mm.wasm-br.0.bin", 18462626]]], ["eag-inline-mesh-wasm-br", [["mm.mesh-wasm-br.0.bin", 3264046]]], ["eag-inline-server-wasm-br", [["mm.server-wasm-br.0.bin", 8901989]]], ["eag-inline-assets", [["mm.assets.0.bin", 7638191]]], ["eag-inline-sounds", [["ym.sounds.0.bin", 20000000], ["ym.sounds.1.bin", 5921893]]]],tot:64778978,skel:"mm.skel"}},VER="20261110g";
+var last=null;try{last=localStorage.getItem("ym_last")}catch(e){}
+var bs=document.querySelectorAll("#sel button");for(var i=0;i<bs.length;i++){if(bs[i].dataset.k===last)bs[i].className="last";bs[i].onclick=function(){go(this.dataset.k)}}
+var h=(location.hash||"").replace("#","");if(V[h]){go(h)}
+async function go(k){
+ try{localStorage.setItem("ym_last",k)}catch(e){}
+ document.getElementById("sel").style.display="none";document.getElementById("b").style.display="block";
+ var T=V[k],MAN=T.man,TOT=T.tot,CN="ymcraft-"+k+"-"+VER,cache=null,got=0,tx=document.getElementById("t");
+ tx.textContent="YMCRAFT を読み込み中...";
+ function bar(){document.getElementById("f").style.width=Math.min(100,got/TOT*100*0.92)+"%"}
+ try{cache=await caches.open(CN);(await caches.keys()).forEach(function(n){if(n.indexOf("ymcraft-"+k+"-")===0&&n!==CN)caches.delete(n);if(/^ymcraft-\d{8}[a-z]$/.test(n))caches.delete(n)})}catch(e){cache=null}
+ async function get(url){var hit=null;if(cache){try{hit=await cache.match(url)}catch(e){}}
+  if(hit){var b=await hit.blob();got+=b.size;bar();return b}
+  var r=await fetch(url,{cache:"no-cache"});if(!r.ok)throw new Error(url+" "+r.status);
+  var rd=r.body.getReader(),ch=[];for(;;){var x=await rd.read();if(x.done)break;ch.push(x.value);got+=x.value.length;bar()}
+  var bl=new Blob(ch);if(cache){try{await cache.put(url,new Response(bl))}catch(e){}}return bl}
+ function b64(bl){return new Promise(function(res,rej){var f=new FileReader();f.onload=function(){var s=f.result;res(s.slice(s.indexOf(",")+1))};f.onerror=rej;f.readAsDataURL(bl)})}
+ try{
+  var sk=await (await get(T.skel)).text(),blobs={};
+  for(var i=0;i<MAN.length;i++){var ps=[];for(var j=0;j<MAN[i][1].length;j++)ps.push(await get(MAN[i][1][j][0]));blobs[MAN[i][0]]=new Blob(ps)}
+  tx.textContent="起動中...";
+  var parts=[],pos=0;
+  for(var i=0;i<MAN.length;i++){var mk="@@"+MAN[i][0]+"@@",q=sk.indexOf(mk,pos);parts.push(sk.slice(pos,q));parts.push(await b64(blobs[MAN[i][0]]));pos=q+mk.length}
+  parts.push(sk.slice(pos));
+  location.replace(URL.createObjectURL(new Blob(parts,{type:"text/html;charset=utf-8"})));
+ }catch(e){tx.textContent="読み込みに失敗しました: "+e.message}
+}
+})();
+</script></body></html>
